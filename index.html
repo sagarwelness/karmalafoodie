@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Food Ordering System</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+min-height:100vh;
+background:
+linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);
+color:#1f2937;
+padding:18px;
+}
+
+.container{
+max-width:600px;
+margin:auto;
+}
+
+.card{
+background:#ffffff;
+border:1px solid #e5e7eb;
+border-radius:10px;
+padding:18px;
+margin-bottom:16px;
+box-shadow:0 10px 25px rgba(15,23,42,.08);
+}
+
+img{
+width:100%;
+height:180px;
+object-fit:cover;
+border-radius:8px;
+margin-bottom:12px;
+}
+
+h1,h2,h3,h4{
+margin-bottom:10px;
+color:#111827;
+line-height:1.25;
+}
+
+h1{
+font-size:26px;
+background:#0f172a;
+color:#ffffff;
+padding:22px 18px;
+border-radius:12px;
+box-shadow:0 14px 30px rgba(15,23,42,.18);
+margin-bottom:18px;
+}
+
+h2{
+font-size:22px;
+}
+
+h3{
+font-size:18px;
+}
+
+button{
+width:100%;
+padding:12px;
+margin-top:8px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+background:#0f766e;
+color:#fff;
+font-size:15px;
+font-weight:700;
+letter-spacing:0;
+box-shadow:0 6px 14px rgba(15,118,110,.18);
+transition:background .2s ease,transform .2s ease,box-shadow .2s ease;
+}
+
+button:hover{
+background:#115e59;
+transform:translateY(-1px);
+box-shadow:0 8px 18px rgba(15,118,110,.22);
+}
+
+input,
+textarea{
+width:100%;
+padding:12px;
+margin-bottom:10px;
+border:1px solid #d1d5db;
+border-radius:8px;
+background:#ffffff;
+color:#111827;
+font-size:15px;
+outline:none;
+}
+
+input:focus,
+textarea:focus{
+border-color:#0f766e;
+box-shadow:0 0 0 3px rgba(15,118,110,.12);
+}
+
+.qty-buttons{
+display:flex;
+gap:10px;
+margin-top:10px;
+}
+
+.qty-buttons button{
+flex:1;
+}
+
+.summary-row{
+padding:6px 0;
+border-bottom:1px solid #e5e7eb;
+}
+
+.total{
+font-size:20px;
+font-weight:bold;
+margin-top:15px;
+color:#0f172a;
+}
+
+.center{
+text-align:center;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 class="center">
+Welcome to Karmala Foodie Service. "Order from the best restaurants in Karmala with the best taste!"
+</h1>
+
+<div id="app"></div>
+
+</div>
+
+<script>
+
+// ====================================
+// CONFIG
+// ====================================
+
+const API_URL =
+"https://script.google.com/macros/s/AKfycbzwWtXChtsAoagvDAhDXKxSTs6zuJ6YAgGGXUHCj2b-oEA3sn_wOPRxJ9aJlKzaGGCdeA/exec";
+
+// ====================================
+// SAMPLE DATA
+// ====================================
+
+const DATA = {
+
+Veg:[
+{
+name:"Hotel Malar Karmala",
+image:"images/Hotel%20Malar%20Karmala.png",
+
+menu:[
+{
+name:"Paneer Butter Masala",
+price:180,
+image:"images/Paneer%20Butter%20Masala.png"
+},
+{
+name:"Veg Biryani",
+price:150,
+image:"images/Veg%20Biryani.png"
+},
+{
+name:"Roti",
+price:20,
+image:"images/Roti.png"
+}
+]
+}
+],
+
+"Non-Veg":[
+{
+name:"Hotel Malar Karmala",
+image:"images/Hotel%20Malar%20Karmala.png",
+
+menu:[
+{
+name:"Matton Masala Karmala",
+price:350,
+image:"images/Matton%20Masala%20Karmala.png"
+},    
+{
+name:"Chicken Curry",
+price:250,
+image:"images/Chicken%20Curry.png"
+},
+{
+name:"Chicken Machurian",
+price:220,
+image:"images/Chicken%20Machurian.png"
+},
+{
+name:"Egg Curry",
+price:140,
+image:"images/Egg%20Curry.png"
+}
+]
+}
+]
+
+};
+
+// ====================================
+// STATE
+// ====================================
+
+let orderType="";
+let selectedRestaurant=null;
+let cart=[];
+let customer={};
+
+// ====================================
+// START
+// ====================================
+
+showFoodType();
+
+// ====================================
+// FOOD TYPE
+// ====================================
+
+function showFoodType(){
+
+document.getElementById("app").innerHTML=`
+
+<div class="card">
+
+<h2>Select Food Type</h2>
+
+<button onclick="selectType('Veg')">
+Veg
+</button>
+
+<button onclick="selectType('Non-Veg')">
+Non-Veg
+</button>
+
+</div>
+
+`;
+
+}
+
+function selectType(type){
+
+orderType=type;
+
+showRestaurants();
+
+}
+
+// ====================================
+// RESTAURANTS
+// ====================================
+
+function showRestaurants(){
+
+const restaurants=
+DATA[orderType];
+
+let html=`
+<h2>Select Restaurant</h2>
+`;
+
+restaurants.forEach((r,index)=>{
+
+html+=`
+
+<div class="card">
+
+<img src="${r.image}">
+
+<h3>${r.name}</h3>
+
+<button onclick="selectRestaurant(${index})">
+Select Restaurant
+</button>
+
+</div>
+
+`;
+
+});
+
+document.getElementById("app").innerHTML=
+html;
+
+}
+
+function selectRestaurant(index){
+
+selectedRestaurant=
+DATA[orderType][index];
+
+showMenu();
+
+}
+
+// ====================================
+// MENU
+// ====================================
+
+function showMenu(){
+
+let html=`
+<h2>${selectedRestaurant.name}</h2>
+`;
+
+selectedRestaurant.menu.forEach(
+(item,index)=>{
+
+html+=`
+
+<div class="card">
+
+<img src="${item.image}">
+
+<h3>${item.name}</h3>
+
+<p>Price: ₹${item.price}</p>
+
+<button onclick="addToCart(${index})">
+Add To Cart
+</button>
+
+</div>
+
+`;
+
+});
+
+html+=`
+<button onclick="showCart()">
+View Cart (${cart.length})
+</button>
+`;
+
+document.getElementById("app").innerHTML=
+html;
+
+}
+
+// ====================================
+// CART
+// ====================================
+
+function addToCart(index){
+
+const item=
+selectedRestaurant.menu[index];
+
+const existing=
+cart.find(
+x=>x.name===item.name
+);
+
+if(existing){
+
+existing.qty++;
+
+}else{
+
+cart.push({
+name:item.name,
+price:item.price,
+qty:1
+});
+
+}
+
+alert("Added to Cart");
+
+showMenu();
+
+}
+
+function showCart(){
+
+let total=0;
+
+let html=`
+<h2>Your Cart</h2>
+`;
+
+if(cart.length===0){
+
+html+=`
+<div class="card">
+Cart Empty
+</div>
+`;
+
+}
+
+cart.forEach((item,index)=>{
+
+const line=
+item.price*item.qty;
+
+total+=line;
+
+html+=`
+
+<div class="card">
+
+<h3>${item.name}</h3>
+
+<p>
+₹${item.price}
+×
+${item.qty}
+=
+₹${line}
+</p>
+
+<div class="qty-buttons">
+
+<button onclick="decreaseQty(${index})">
+-
+</button>
+
+<button onclick="increaseQty(${index})">
++
+</button>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+html+=`
+
+<div class="card">
+
+<div class="total">
+Total: ₹${total}
+</div>
+
+<button onclick="showCustomerForm()">
+Continue
+</button>
+
+</div>
+
+`;
+
+document.getElementById("app").innerHTML=
+html;
+
+}
+
+function increaseQty(index){
+
+cart[index].qty++;
+
+showCart();
+
+}
+
+function decreaseQty(index){
+
+cart[index].qty--;
+
+if(cart[index].qty<=0){
+
+cart.splice(index,1);
+
+}
+
+showCart();
+
+}
+
+// ====================================
+// CUSTOMER DETAILS
+// ====================================
+
+function showCustomerForm(){
+
+document.getElementById("app").innerHTML=`
+
+<div class="card">
+
+<h2>Customer Details</h2>
+
+<input
+id="name"
+placeholder="Name">
+
+<input
+id="phone"
+placeholder="Phone Number">
+
+<textarea
+id="address"
+placeholder="Address"></textarea>
+
+<button onclick="showSummary()">
+Review Order
+</button>
+
+</div>
+
+`;
+
+}
+
+// ====================================
+// SUMMARY
+// ====================================
+
+function showSummary(){
+
+customer.name=
+document.getElementById("name").value;
+
+customer.phone=
+document.getElementById("phone").value;
+
+customer.address=
+document.getElementById("address").value;
+
+let total=0;
+
+let html=`
+
+<div class="card">
+
+<h2>Order Summary</h2>
+
+<p><b>Name:</b> ${customer.name}</p>
+
+<p><b>Phone:</b> ${customer.phone}</p>
+
+<p><b>Address:</b> ${customer.address}</p>
+
+<hr>
+
+`;
+
+cart.forEach(item=>{
+
+const line=
+item.price*item.qty;
+
+total+=line;
+
+html+=`
+
+<div class="summary-row">
+
+${item.name}
+
+*
+
+₹${item.price}
+
+×
+
+${item.qty}
+
+=
+
+₹${line}
+
+</div>
+
+`;
+
+});
+
+html+=`
+
+<div class="total">
+Total ₹${total}
+</div>
+
+<button onclick="submitOrder()">
+Submit Order
+</button>
+
+</div>
+
+`;
+
+document.getElementById("app").innerHTML=
+html;
+
+}
+
+// ====================================
+// SUBMIT
+// ====================================
+
+async function submitOrder(){
+
+try{
+
+const payload={
+
+action:"createOrder",
+
+type:orderType,
+
+restaurant:selectedRestaurant.name,
+
+customer:customer,
+
+items:cart
+
+};
+
+const response=
+await fetch(API_URL,{
+method:"POST",
+body:JSON.stringify(payload)
+});
+
+const result=
+await response.json();
+
+showConfirmation(
+result.orderId
+);
+
+}
+catch(error){
+
+alert(
+"Order submission failed"
+);
+
+}
+
+}
+
+// ====================================
+// CONFIRMATION
+// ====================================
+
+function showConfirmation(orderId){
+
+document.getElementById("app").innerHTML=`
+
+<div class="card center">
+
+<h2>
+Order Submitted Successfully
+</h2>
+
+<h1>
+${orderId}
+</h1>
+
+<p>
+Your order has been submitted.
+</p>
+
+<br>
+
+<p>
+Contact Number:
+9209188838
+</p>
+
+</div>
+
+`;
+
+}
+
+</script>
+
+</body>
+</html>
